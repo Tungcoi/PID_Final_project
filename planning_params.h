@@ -32,7 +32,7 @@
 #define P_REQ_STOPPED_TIME 1.0         // Required stop time at stop signs (s)
 #define P_LEAD_VEHICLE_LOOKAHEAD 20.0  // Lookahead distance for lead vehicle (m)
 #define P_REACTION_TIME 0.25           // Reaction time for following lead vehicles (s)
-#define P_NUM_POINTS_IN_SPIRAL 25     // Num of points in the spiral
+#define P_NUM_POINTS_IN_SPIRAL 15     // Num of points in the spiral
 
 
 #define P_STOP_THRESHOLD_DISTANCE \

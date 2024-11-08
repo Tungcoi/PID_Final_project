@@ -81,17 +81,16 @@ double BehaviorPlannerFSM::get_look_ahead_distance(const State& ego_state) {
   
   
   //auto look_ahead_distance = 1.0;  // <- Fix This
-  auto look_ahead_distance_ref = (velocity_mag * velocity_mag) / (2 * std::abs(-3.0));
-  auto look_ahead_distance = velocity_mag * _lookahead_time + 0.5 * accel_mag * _lookahead_time * _lookahead_time;
+  auto look_ahead_distance = (velocity_mag * velocity_mag) / (2 * std::abs(-3.0)); //COMFORT_DECELERATION = -3.0
+  //auto look_ahead_distance = velocity_mag * _lookahead_time + 0.5 * accel_mag * _lookahead_time * _lookahead_time;
 
-  LOG(INFO) << "Calculated look_ahead_distance: " << look_ahead_distance;
-  LOG(INFO) << "Calculated look_ahead_distance_ref: " << look_ahead_distance_ref;
+  //LOG(INFO) << "Calculated look_ahead_distance: " << look_ahead_distance;
 
   look_ahead_distance =
       std::min(std::max(look_ahead_distance, _lookahead_distance_min),
                _lookahead_distance_max);
 
-  LOG(INFO) << "Final look_ahead_distance: " << look_ahead_distance;
+  //LOG(INFO) << "Final look_ahead_distance: " << look_ahead_distance;
 
   return look_ahead_distance;
 }
@@ -238,7 +237,7 @@ State BehaviorPlannerFSM::state_transition(const State& ego_state, State goal,
             goal.velocity.x = _speed_limit * 0.5 * std::cos(goal.rotation.yaw);
             goal.velocity.y = _speed_limit * 0.5 * std::sin(goal.rotation.yaw);
         }
-      LOG(INFO) << "BP - changing to FOLLOW_LANE, tl_state = " <<tl_state;
+      //LOG(INFO) << "BP - changing to FOLLOW_LANE, tl_state = " <<tl_state;
 
     }
   }
