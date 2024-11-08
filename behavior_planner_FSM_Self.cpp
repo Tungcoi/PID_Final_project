@@ -81,7 +81,7 @@ double BehaviorPlannerFSM::get_look_ahead_distance(const State& ego_state) {
   
   
   //auto look_ahead_distance = 1.0;  // <- Fix This
-  auto look_ahead_distance_ref = (velocity_mag * velocity_mag) / (2 * std::abs(COMFORT_DECELERATION));
+  auto look_ahead_distance_ref = (velocity_mag * velocity_mag) / (2 * std::abs(-3.0));
   auto look_ahead_distance = velocity_mag * _lookahead_time + 0.5 * accel_mag * _lookahead_time * _lookahead_time;
 
   LOG(INFO) << "Calculated look_ahead_distance: " << look_ahead_distance;
@@ -235,8 +235,8 @@ State BehaviorPlannerFSM::state_transition(const State& ego_state, State goal,
       _active_maneuver = FOLLOW_LANE;
       if (tl_state == "Yellow") {
             // Giảm tốc độ khi gặp đèn vàng
-            goal.velocity.x = SPEED_LIMIT * 0.5 * std::cos(goal.rotation.yaw);
-            goal.velocity.y = SPEED_LIMIT * 0.5 * std::sin(goal.rotation.yaw);
+            goal.velocity.x = _speed_limit * 0.5 * std::cos(goal.rotation.yaw);
+            goal.velocity.y = _speed_limit * 0.5 * std::sin(goal.rotation.yaw);
         }
       LOG(INFO) << "BP - changing to FOLLOW_LANE, tl_state = " <<tl_state;
 
