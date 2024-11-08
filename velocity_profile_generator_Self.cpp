@@ -364,11 +364,7 @@ double VelocityProfileGenerator::calc_distance(const double& v_i,
     // acceleration/deceleration "a". HINT look at the description of this
     // function. Make sure you handle div by 0
     //d = 0;  // <- Update
-    d = (v_f * v_f - v_i * v_i) / (2.0 * a);
-    auto d1 = std::abs((v_f * v_f - v_i * v_i) / (2.0 * a));
-    LOG(INFO) << "Caculated distance : " << d;
-    LOG(INFO) << "Caculated distance refer: " << d1;
-
+    d = std::abs((v_f * v_f - v_i * v_i) / (2.0 * a));
   }
   return d;
 }

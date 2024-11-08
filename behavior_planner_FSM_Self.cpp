@@ -81,8 +81,8 @@ double BehaviorPlannerFSM::get_look_ahead_distance(const State& ego_state) {
   
   
   //auto look_ahead_distance = 1.0;  // <- Fix This
-  auto look_ahead_distance = (velocity_mag * velocity_mag) / (2 * std::abs(COMFORT_DECELERATION));
-  auto look_ahead_distance_ref = velocity_mag * _lookahead_time + 0.5 * accel_mag * _lookahead_time * _lookahead_time;
+  auto look_ahead_distance_ref = (velocity_mag * velocity_mag) / (2 * std::abs(COMFORT_DECELERATION));
+  auto look_ahead_distance = velocity_mag * _lookahead_time + 0.5 * accel_mag * _lookahead_time * _lookahead_time;
 
   LOG(INFO) << "Calculated look_ahead_distance: " << look_ahead_distance;
   LOG(INFO) << "Calculated look_ahead_distance_ref: " << look_ahead_distance_ref;
