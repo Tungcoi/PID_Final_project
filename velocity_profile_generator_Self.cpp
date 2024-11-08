@@ -15,11 +15,6 @@
 #include <cstdlib>
 #include <thread>
 
-// Define các tham số dưới dạng Macro để dễ dàng cấu hình và thay đổi
-#define A_MAX 3.0               // Maximum acceleration (m/s^2)
-#define SLOW_SPEED 1.0          // Speed near stopping point (m/s)
-#define TIME_GAP 1.5            // Time gap for safe following (s)
-#define EPSILON_VELOCITY 1e-5   // Threshold for small velocities
 
 VelocityProfileGenerator::VelocityProfileGenerator() {}
 VelocityProfileGenerator::~VelocityProfileGenerator() {}
@@ -370,6 +365,10 @@ double VelocityProfileGenerator::calc_distance(const double& v_i,
     // function. Make sure you handle div by 0
     //d = 0;  // <- Update
     d = (v_f * v_f - v_i * v_i) / (2.0 * a);
+    auto d1 = std::abs((v_f * v_f - v_i * v_i) / (2.0 * a));
+    LOG(INFO) << "Caculated distance : " << d;
+    LOG(INFO) << "Caculated distance refer: " << d1;
+
   }
   return d;
 }

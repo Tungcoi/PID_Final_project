@@ -13,31 +13,12 @@
 #include <array>
 
 // Planning Constants
-#ifdef CODE_P6
-#define P_NUM_PATHS 7
-#define P_LOOKAHEAD_MIN 8.0            // m
-#define P_LOOKAHEAD_MAX 20.0           // m
-#define P_LOOKAHEAD_TIME 1.5           // s
-#define P_GOAL_OFFSET 1.0              // m
-#define P_ERR_TOLERANCE 0.1            // m
-#define P_TIME_GAP 1.0                 // s
-#define P_MAX_ACCEL 1.5                // m/s^2
-#define P_SLOW_SPEED 1.0               // m/s
-#define P_SPEED_LIMIT 3.0              // m/s
-#define P_STOP_LINE_BUFFER 0.5         // m
-#define P_STOP_THRESHOLD_SPEED 0.02    // m/s
-#define P_REQ_STOPPED_TIME 1.0         // secs
-#define P_LEAD_VEHICLE_LOOKAHEAD 20.0  // m
-#define P_REACTION_TIME 0.25           // secs
-#define P_NUM_POINTS_IN_SPIRAL 20
-#elif defined(CODE_SELF)
 #define P_NUM_PATHS 7   // Number of lateral offset paths from the center-line goal
 // Lookahead distance and time for path planning
 #define P_LOOKAHEAD_MIN 8.0            // m
 #define P_LOOKAHEAD_MAX 20.0           // m
 #define P_LOOKAHEAD_TIME 1.5           // s
 // Offset for generating alternate goals
-// #define P_GOAL_OFFSET 1.0              // m
 #define P_GOAL_OFFSET 1.5              // Lateral offset distance for alternate goals (m)
 
 // Tolerance and thresholds
@@ -53,43 +34,6 @@
 #define P_REACTION_TIME 0.25           // Reaction time for following lead vehicles (s)
 //#define P_NUM_POINTS_IN_SPIRAL 2       // TODO - Num of points in the spiral
 #define P_NUM_POINTS_IN_SPIRAL 150     // Number of points used to discretize the cubic spiral
-
-#else
-#define P_NUM_PATHS 5                  // Number of deviations to enumerate
-// Minimum lookhead distance (m)
-#define P_LOOKAHEAD_MIN 8.0
-// Maximum lookahead distance (m)
-#define P_LOOKAHEAD_MAX 20.0
-// Lookahead time (s)
-#define P_LOOKAHEAD_TIME 1.5
-// Goal-offset distance (m)
-#define P_GOAL_OFFSET 1.0
-// Error tolerance (m)
-#define P_ERR_TOLERANCE 0.1
-// Time-gap (s) to enforce
-#define P_TIME_GAP 1.0
-// Maximum permitted accelertion (m/s^2)
-#define P_MAX_ACCEL 1.5
-// Speed (m/s) to use for slow manoeuvre
-#define P_SLOW_SPEED 1.0
-// Speed limit (m/s) to set in `FOLLOW_LANE` state
-#define P_SPEED_LIMIT 3.0
-// Distance (m) to buffer from stopping point (stay behind)
-#define P_STOP_LINE_BUFFER 0.5
-// Maximum speed (m/s) to set for stopping manoeuvre
-#define P_STOP_THRESHOLD_SPEED 0.02
-// Minimum required stopping time (s)
-#define P_REQ_STOPPED_TIME 1.0
-// Lookahead distance (m) to use for lead vehicle
-#define P_LEAD_VEHICLE_LOOKAHEAD 20.0
-// Minimum required reaction time (s)
-#define P_REACTION_TIME 0.25
-// Number of waypoints to use in polynomial spiral (path)
-// CANDO: Modify the number of waypoints to use in each path
-// NOTE: Needs to be sufficiently large to avoid compile error
-#define P_NUM_POINTS_IN_SPIRAL 25
-
-#endif
 
 
 #define P_STOP_THRESHOLD_DISTANCE \

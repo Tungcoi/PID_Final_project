@@ -6,13 +6,6 @@
 
 #include "motion_planner.h"
 
-// Define các tham số dưới dạng Macro để dễ dàng cấu hình và thay đổi
-#define GOAL_OFFSET 1.5 // The lateral offset distance for generating offset goals (in meters)
-#define NUM_PATHS 5 // Number of offset paths to generate
-#define P_NUM_POINTS_IN_SPIRAL 150 // Number of points used to discretize the spiral
-#define MAX_SPIRAL_OFFSET_DISTANCE 10.0 // Maximum distance between the main goal and offset goals
-#define MIN_SPIRAL_VALID_DISTANCE 0.1 // Minimum distance between spiral end point and offset goal to be valid
-
 MotionPlanner::~MotionPlanner() {}
 
 State MotionPlanner::get_goal_state_in_ego_frame(const State& ego_state,

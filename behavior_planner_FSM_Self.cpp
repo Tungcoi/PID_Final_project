@@ -10,19 +10,6 @@
 
 #include "behavior_planner_FSM.h"
 
-// -------------------------
-// Define the macro values for project configuration
-// These are configuration values for speed, lookahead distance, stop time, etc.
-// These values are added to facilitate system configuration and adjustments.
-// -------------------------
-#define SPEED_LIMIT 30.0 // m/s (approximately 108 km/h)
-#define LOOKAHEAD_DISTANCE_MIN 5.0 // m (minimum lookahead distance)
-#define LOOKAHEAD_DISTANCE_MAX 50.0 // m (maximum lookahead distance)
-#define STOP_LINE_BUFFER 2.0 // m (back up distance from the stop line)
-#define STOP_THRESHOLD_SPEED 0.1 // m/s (small speed to consider the car as stopped)
-#define P_STOP_THRESHOLD_DISTANCE 1.0 // m (small distance to the stop point)
-#define REQ_STOP_TIME 5 // seconds (required stop time at intersections)
-#define COMFORT_DECELERATION -3.0 // m/s² (comfortable deceleration rate)
 
 State BehaviorPlannerFSM::get_closest_waypoint_goal(
     const State& ego_state, const SharedPtr<cc::Map>& map,
@@ -95,9 +82,10 @@ double BehaviorPlannerFSM::get_look_ahead_distance(const State& ego_state) {
   
   //auto look_ahead_distance = 1.0;  // <- Fix This
   auto look_ahead_distance = (velocity_mag * velocity_mag) / (2 * std::abs(COMFORT_DECELERATION));
-
+  auto look_ahead_distance_ref = velocity_mag * _lookahead_time + 0.5 * accel_mag * _lookahead_time * _lookahead_time;
 
   LOG(INFO) << "Calculated look_ahead_distance: " << look_ahead_distance;
+  LOG(INFO) << "Calculated look_ahead_distance_ref: " << look_ahead_distance_ref;
 
   look_ahead_distance =
       std::min(std::max(look_ahead_distance, _lookahead_distance_min),
@@ -163,8 +151,8 @@ State BehaviorPlannerFSM::state_transition(const State& ego_state, State goal,
       auto ang = goal.rotation.yaw + M_PI;
       // goal.location.x += 1.0;  // <- Fix This
       // goal.location.y += 1.0;  // <- Fix This
-      goal.location.x += STOP_LINE_BUFFER * std::cos(ang);
-      goal.location.y += STOP_LINE_BUFFER * std::sin(ang);
+      goal.location.x += _stop_line_buffer * std::cos(ang);
+      goal.location.y += _stop_line_buffer * std::sin(ang);
 
       // LOG(INFO) << "BP- new STOP goal at: " << goal.location.x << ", "
       //          << goal.location.y;
@@ -184,8 +172,8 @@ State BehaviorPlannerFSM::state_transition(const State& ego_state, State goal,
       // HINT: _speed_limit * std::sin/cos (goal.rotation.yaw);
       // goal.velocity.x = 1.0;  // <- Fix This
       // goal.velocity.y = 1.0;  // <- Fix This
-      goal.velocity.x = SPEED_LIMIT * std::cos(goal.rotation.yaw);
-      goal.velocity.y = SPEED_LIMIT * std::sin(goal.rotation.yaw);
+      goal.velocity.x = _speed_limit * std::cos(goal.rotation.yaw);
+      goal.velocity.y = _speed_limit * std::sin(goal.rotation.yaw);
       goal.velocity.z = 0;
     }
 
@@ -244,15 +232,13 @@ State BehaviorPlannerFSM::state_transition(const State& ego_state, State goal,
       // TODO-move to FOLLOW_LANE state: What state do we want to move to, when
       // we are "done" at the STOPPED state?
       //_active_maneuver = ;  // <- Fix This
-      if (tl_state == "Green") {
-            _active_maneuver = FOLLOW_LANE;
-        } else if (tl_state == "Yellow") {
+      _active_maneuver = FOLLOW_LANE;
+      if (tl_state == "Yellow") {
             // Giảm tốc độ khi gặp đèn vàng
             goal.velocity.x = SPEED_LIMIT * 0.5 * std::cos(goal.rotation.yaw);
             goal.velocity.y = SPEED_LIMIT * 0.5 * std::sin(goal.rotation.yaw);
-            _active_maneuver = FOLLOW_LANE;
         }
-      // LOG(INFO) << "BP - changing to FOLLOW_LANE";
+      LOG(INFO) << "BP - changing to FOLLOW_LANE, tl_state = " <<tl_state;
 
     }
   }

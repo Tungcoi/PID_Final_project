@@ -1,8 +1,5 @@
-set(sources main.cpp behavior_planner_FSM_P6.cpp motion_planner_P6.cpp cubic_spiral.cpp spiral_base.cpp integral.cpp spiral_equations.cpp cost_functions_P6.cpp utils.cpp velocity_profile_generator_P6.cpp )
-add_definitions(-DCODE_P6=1)
+
 
 set(sources main.cpp behavior_planner_FSM_Self.cpp motion_planner_Self.cpp cubic_spiral.cpp spiral_base.cpp integral.cpp spiral_equations.cpp cost_functions_Self.cpp utils.cpp velocity_profile_generator_Self.cpp )
 add_definitions(-DCODE_SELF=1)
 
-set(sources main.cpp behavior_planner_FSM_Refer.cpp motion_planner_Refer.cpp cubic_spiral.cpp spiral_base.cpp integral.cpp spiral_equations.cpp cost_functions_Refer.cpp utils.cpp velocity_profile_generator_Refer.cpp )
-add_definitions(-DCODE_REFER=1)
