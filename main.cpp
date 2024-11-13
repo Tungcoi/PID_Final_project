@@ -328,6 +328,16 @@ int main(int argc, char* argv[])
             new_delta_time = difftime(timer, prev_timer);
             prev_timer = timer;
 
+            double target_x = x_points.back();
+            double target_y = y_points.back();
+            double target_v = v_points.back();
+            double current_x = x_position;
+            double current_y = y_position;
+            double current_v = velocity;
+
+            std::cout<<"target_x = " <<target_x <<", target_y = " << target_y <<", target_v = " << target_v<<endl;
+            std::cout<<"current_x = " <<current_x <<", current_y = " << current_y <<", current_v = " << current_v<<endl;
+
             ////////////////////////////////////////
             // Steering control
             ////////////////////////////////////////
@@ -339,14 +349,14 @@ int main(int argc, char* argv[])
             pid_steer.UpdateDeltaTime(new_delta_time);  // Cập nhật delta time cho bộ điều khiển góc lái
                 
             // Compute steer error
-            double error_steer;
-            double steer_output;
+            double error_steer = 0.0;
+            double steer_output = 0.0;
 
             /**
              * TODO (step 3): compute the steer error (error_steer) from the position and the desired trajectory
              **/
             // Tính toán lỗi góc lái dựa trên góc giữa điểm hiện tại và điểm mục tiêu cuối cùng trên quỹ đạo
-            error_steer = angle_between_points(x_position, y_position, x_points.back(), y_points.back()) - yaw;
+            error_steer = angle_between_points(current_x, current_y, target_x, target_y) - yaw;
             std::cout<< "error_steer = " << error_steer <<endl;
 
             /**
@@ -377,14 +387,7 @@ int main(int argc, char* argv[])
             // Update the delta time with the previous command
             pid_throttle.UpdateDeltaTime(new_delta_time);  // Cập nhật delta time cho bộ điều khiển tốc độ
             
-            double error_throttle = 0;
-            double target_x = x_points.back();
-            double target_y = y_points.back();
-            double target_v = v_points.back();
-            double current_x = x_position;
-            double current_y = y_position;
-            double current_v = velocity;
-
+            double error_throttle = 0.0;
             double distance_to_target = utils::distance(current_x, current_y, target_x, target_y);
             std::cout<<"distance_to_target = "<< distance_to_target<<endl;
 
@@ -409,8 +412,8 @@ int main(int argc, char* argv[])
             double throttle = pid_throttle.TotalError();  // Lấy giá trị đầu ra điều khiển tốc độ từ PID
             std::cout<<"after check error throttle =  "<< throttle<<endl;
         
-            double throttle_output;
-            double brake_output;
+            double throttle_output = 0.0;
+            double brake_output = 0.0;
 
             // Adapt the negative throttle to break
             if (throttle > 0.0) {
