@@ -195,7 +195,7 @@ void set_obst(vector<double> x_points, vector<double> y_points, vector<State>& o
 	obst_flag = true;
 }
 
-int main ()
+int main(int argc, char* argv[]) 
 {
   double max_steer = 1.2;
   double max_throttle = 1.0;
@@ -381,13 +381,13 @@ int main ()
             
 
           // Compute error of speed
-          //double error_throttle;
+          
           
           /**
           * TODO (step 2): compute the throttle error (error_throttle) from the position and the desired speed
           **/
           // modify the following line for step 2
-          //error_throttle = 0;
+          double error_throttle = 0;
           double target_x = x_points.back();
           double target_y = y_points.back();
           double target_v = v_points.back();
@@ -410,11 +410,6 @@ int main ()
 
           // Giới hạn giá trị của error_throttle để tránh hiện tượng "quá điều chỉnh"
           error_throttle = utils::clampD(error_throttle, -1.0, 1.0);
-
-
-
-
-          
 
           /**
           * TODO (step 2): uncomment these lines
