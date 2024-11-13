@@ -230,7 +230,8 @@ int main(int argc, char* argv[])
   // Lấy bộ tham số PID cho `steer` và `throttle` từ mảng
   auto steer_params = pid_steer_params[option];
   auto throttle_params = pid_throttle_params[option];
-
+  std::string steer_file_name = "steer_pid_data_option_" + std::to_string(option) + ".txt";
+  std::string throttle_file_name = "throttle_pid_data_option_" + std::to_string(option) + ".txt";
 
   cout << "starting server" << endl;
   uWS::Hub h;
@@ -239,10 +240,10 @@ int main(int argc, char* argv[])
   int i = 0;
 
   fstream file_steer;
-  file_steer.open("steer_pid_data.txt", std::ofstream::out | std::ofstream::trunc);
+  file_steer.open(steer_file_name, std::ofstream::out | std::ofstream::trunc);
   file_steer.close();
   fstream file_throttle;
-  file_throttle.open("throttle_pid_data.txt", std::ofstream::out | std::ofstream::trunc);
+  file_throttle.open(throttle_file_name, std::ofstream::out | std::ofstream::trunc);
   file_throttle.close();
 
   time_t prev_timer;
@@ -282,9 +283,9 @@ int main(int argc, char* argv[])
 
           // create file to save values
           fstream file_steer;
-          file_steer.open("steer_pid_data.txt");
+          file_steer.open(steer_file_name);
           fstream file_throttle;
-          file_throttle.open("throttle_pid_data.txt");
+          file_throttle.open(throttle_file_name);
 
           vector<double> x_points = data["traj_x"];
           vector<double> y_points = data["traj_y"];
