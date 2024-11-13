@@ -195,310 +195,295 @@ void set_obst(vector<double> x_points, vector<double> y_points, vector<State>& o
 	obst_flag = true;
 }
 
+std::string steer_file_name;
+std::string throttle_file_name;
+
 int main(int argc, char* argv[]) 
 {
-  double max_steer = 1.2;
-  double max_throttle = 1.0;
-  double max_brake = -1.0;
+    
+    // Mảng lưu trữ các bộ tham số cho PID Controller
+    std::vector<std::vector<double>> pid_steer_params = {
+        {0.3, 0.01, 0.4},  // Mặc định
+        {0.15, 0.005, 0.05}, // Option 1: An toàn và mượt mà
+        {0.3, 0.05, 0.3},  // Option 2: Phản ứng nhanh
+        {0.25, 0.01, 0.25}, // Option 3: Ổn định cho thời gian chạy lâu
+        {0.25, 0.1, 0.5}   // Option 4: Tối ưu hóa cao
+    };
 
-  // Mảng lưu trữ các bộ tham số cho PID Controller
-  std::vector<std::vector<double>> pid_steer_params = {
-      {0.3, 0.01, 0.4},  // Mặc định
-      {0.15, 0.005, 0.05}, // Option 1: An toàn và mượt mà
-      {0.3, 0.05, 0.3},  // Option 2: Phản ứng nhanh
-      {0.25, 0.01, 0.25}, // Option 3: Ổn định cho thời gian chạy lâu
-      {0.25, 0.1, 0.5}   // Option 4: Tối ưu hóa cao
-  };
+    std::vector<std::vector<double>> pid_throttle_params = {
+        {0.35, 0.01, 0.2},  // Mặc định
+        {0.25, 0.02, 0.1},  // Option 1: An toàn và mượt mà
+        {0.35, 0.01, 0.2},  // Option 2: Phản ứng nhanh
+        {0.2, 0.05, 0.1},   // Option 3: Ổn định cho thời gian chạy lâu
+        {0.3, 0.02, 0.2}    // Option 4: Tối ưu hóa cao
+    };
+    int option = 0;
+    if (argc > 1) {
+        option = std::stoi(argv[1]);
+        // Đảm bảo chỉ số hợp lệ
+        if (option < 0 || option >= pid_steer_params.size()) {
+            std::cerr << "Invalid option! Using default parameters." << std::endl;
+            option = 0;
+        }
+    }
+    cout << "param option = " << option << endl;
+    // Lấy bộ tham số PID cho `steer` và `throttle` từ mảng
+    auto steer_params = pid_steer_params[option];
+    auto throttle_params = pid_throttle_params[option];
+    steer_file_name = "steer_pid_data_option_" + std::to_string(option) + ".txt";
+    throttle_file_name = "throttle_pid_data_option_" + std::to_string(option) + ".txt";
 
-  std::vector<std::vector<double>> pid_throttle_params = {
-      {0.35, 0.01, 0.2},  // Mặc định
-      {0.25, 0.02, 0.1},  // Option 1: An toàn và mượt mà
-      {0.35, 0.01, 0.2},  // Option 2: Phản ứng nhanh
-      {0.2, 0.05, 0.1},   // Option 3: Ổn định cho thời gian chạy lâu
-      {0.3, 0.02, 0.2}    // Option 4: Tối ưu hóa cao
-  };
-  int option = 0;
-  if (argc > 1) {
-      option = std::stoi(argv[1]);
-      // Đảm bảo chỉ số hợp lệ
-      if (option < 0 || option >= pid_steer_params.size()) {
-          std::cerr << "Invalid option! Using default parameters." << std::endl;
-          option = 0;
-      }
-  }
+    cout << "starting server" << endl;
+    uWS::Hub h;
 
-  // Lấy bộ tham số PID cho `steer` và `throttle` từ mảng
-  auto steer_params = pid_steer_params[option];
-  auto throttle_params = pid_throttle_params[option];
-  std::string steer_file_name = "steer_pid_data_option_" + std::to_string(option) + ".txt";
-  std::string throttle_file_name = "throttle_pid_data_option_" + std::to_string(option) + ".txt";
+    double new_delta_time;
+    int i = 0;
 
-  cout << "starting server" << endl;
-  uWS::Hub h;
+    fstream file_steer;
+    file_steer.open(steer_file_name, std::ofstream::out | std::ofstream::trunc);
+    file_steer.close();
+    fstream file_throttle;
+    file_throttle.open(throttle_file_name, std::ofstream::out | std::ofstream::trunc);
+    file_throttle.close();
 
-  double new_delta_time;
-  int i = 0;
+    time_t prev_timer;
+    time_t timer;
+    time(&prev_timer);
 
-  fstream file_steer;
-  file_steer.open(steer_file_name, std::ofstream::out | std::ofstream::trunc);
-  file_steer.close();
-  fstream file_throttle;
-  file_throttle.open(throttle_file_name, std::ofstream::out | std::ofstream::trunc);
-  file_throttle.close();
+    // initialize pid steer
+    /**
+     * TODO (Step 1): create pid (pid_steer) for steer command and initialize values
+     **/  
+    double max_steer = 1.2;
+    PID pid_steer = PID();
+    double steer_kp = steer_params[0];
+    double steer_ki = steer_params[1];
+    double steer_kd = steer_params[2];
+    pid_steer.Init(steer_kp, steer_ki, steer_kd, max_steer, -max_steer);    // Khởi tạo bộ điều khiển góc lái (steering) với các tham số PID
 
-  time_t prev_timer;
-  time_t timer;
-  time(&prev_timer);
-
-  // initialize pid steer
-  /**
-  * TODO (Step 1): create pid (pid_steer) for steer command and initialize values
-  **/  
-  PID pid_steer = PID();
-  double steer_kp = steer_params[0];
-  double steer_ki = steer_params[1];
-  double steer_kd = steer_params[2];
-  pid_steer.Init(steer_kp, steer_ki, steer_kd, max_steer, -max_steer);    // Khởi tạo bộ điều khiển góc lái (steering) với các tham số PID
-
-// initialize pid throttle
-  /**
-  * TODO (Step 1): create pid (pid_throttle) for throttle command and initialize values
-  **/
- 
-
-  PID pid_throttle = PID();
-  double throttle_kp = throttle_params[0];
-  double throttle_ki = throttle_params[1];
-  double throttle_kd = throttle_params[2];
-  pid_throttle.Init(throttle_kp, throttle_ki, throttle_kd, max_throttle, max_brake);
+    // initialize pid throttle
+    /**
+     * TODO (Step 1): create pid (pid_throttle) for throttle command and initialize values
+     **/
+    double max_throttle = 1.0;
+    double max_brake = -1.0;
+    PID pid_throttle = PID();
+    double throttle_kp = throttle_params[0];
+    double throttle_ki = throttle_params[1];
+    double throttle_kd = throttle_params[2];
+    pid_throttle.Init(throttle_kp, throttle_ki, throttle_kd, max_throttle, max_brake);
 
 
-  h.onMessage([&pid_steer, &pid_throttle, &new_delta_time, &timer, &prev_timer, &i, &prev_timer](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode)
-  {
+    h.onMessage([&pid_steer, &pid_throttle, &new_delta_time, &timer, &prev_timer, &i, &prev_timer](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode)
+    {
         auto s = hasData(data);
 
-        if (s != "") {
+        if (s != "") 
+        {
 
-          auto data = json::parse(s);
+            auto data = json::parse(s);
 
-          // create file to save values
-          fstream file_steer;
-          file_steer.open(steer_file_name);
-          fstream file_throttle;
-          file_throttle.open(throttle_file_name);
+            // create file to save values
+            fstream file_steer;
+            file_steer.open(steer_file_name);
+            fstream file_throttle;
+            file_throttle.open(throttle_file_name);
 
-          vector<double> x_points = data["traj_x"];
-          vector<double> y_points = data["traj_y"];
-          vector<double> v_points = data["traj_v"];
-          double yaw = data["yaw"];
-          double velocity = data["velocity"];
-          double sim_time = data["time"];
-          double waypoint_x = data["waypoint_x"];
-          double waypoint_y = data["waypoint_y"];
-          double waypoint_t = data["waypoint_t"];
-          bool is_junction = data["waypoint_j"];
-          string tl_state = data["tl_state"];
+            vector<double> x_points = data["traj_x"];
+            vector<double> y_points = data["traj_y"];
+            vector<double> v_points = data["traj_v"];
+            double yaw = data["yaw"];
+            double velocity = data["velocity"];
+            double sim_time = data["time"];
+            double waypoint_x = data["waypoint_x"];
+            double waypoint_y = data["waypoint_y"];
+            double waypoint_t = data["waypoint_t"];
+            bool is_junction = data["waypoint_j"];
+            string tl_state = data["tl_state"];
 
-          double x_position = data["location_x"];
-          double y_position = data["location_y"];
-          double z_position = data["location_z"];
+            double x_position = data["location_x"];
+            double y_position = data["location_y"];
+            double z_position = data["location_z"];
 
-          if(!have_obst){
-          	vector<double> x_obst = data["obst_x"];
-          	vector<double> y_obst = data["obst_y"];
-          	set_obst(x_obst, y_obst, obstacles, have_obst);
-          }
+            if(!have_obst){
+                vector<double> x_obst = data["obst_x"];
+                vector<double> y_obst = data["obst_y"];
+                set_obst(x_obst, y_obst, obstacles, have_obst);
+            }
 
-          State goal;
-          goal.location.x = waypoint_x;
-          goal.location.y = waypoint_y;
-          goal.rotation.yaw = waypoint_t;
+            State goal;
+            goal.location.x = waypoint_x;
+            goal.location.y = waypoint_y;
+            goal.rotation.yaw = waypoint_t;
 
-          vector< vector<double> > spirals_x;
-          vector< vector<double> > spirals_y;
-          vector< vector<double> > spirals_v;
-          vector<int> best_spirals;
+            vector< vector<double> > spirals_x;
+            vector< vector<double> > spirals_y;
+            vector< vector<double> > spirals_v;
+            vector<int> best_spirals;
 
-          path_planner(x_points, y_points, v_points, yaw, velocity, goal, is_junction, tl_state, spirals_x, spirals_y, spirals_v, best_spirals);
+            path_planner(x_points, y_points, v_points, yaw, velocity, goal, is_junction, tl_state, spirals_x, spirals_y, spirals_v, best_spirals);
 
-          // Save time and compute delta time
-          time(&timer);
-          new_delta_time = difftime(timer, prev_timer);
-          prev_timer = timer;
+            // Save time and compute delta time
+            time(&timer);
+            new_delta_time = difftime(timer, prev_timer);
+            prev_timer = timer;
 
-          ////////////////////////////////////////
-          // Steering control
-          ////////////////////////////////////////
+            ////////////////////////////////////////
+            // Steering control
+            ////////////////////////////////////////
 
-          /**
-          * TODO (step 3): uncomment these lines
-          **/
-//           // Update the delta time with the previous command
-//           pid_steer.UpdateDeltaTime(new_delta_time);
-          pid_steer.UpdateDeltaTime(new_delta_time);  // Cập nhật delta time cho bộ điều khiển góc lái
+            /**
+             * TODO (step 3): uncomment these lines
+             **/
+            // Update the delta time with the previous command
+            pid_steer.UpdateDeltaTime(new_delta_time);  // Cập nhật delta time cho bộ điều khiển góc lái
+                
+            // Compute steer error
+            double error_steer;
+            double steer_output;
+
+            /**
+             * TODO (step 3): compute the steer error (error_steer) from the position and the desired trajectory
+             **/
+            // Tính toán lỗi góc lái dựa trên góc giữa điểm hiện tại và điểm mục tiêu cuối cùng trên quỹ đạo
+            error_steer = angle_between_points(x_position, y_position, x_points.back(), y_points.back()) - yaw;
+            std::cout<< "error_steer = " << error_steer <<endl;
+
+            /**
+             * TODO (step 3): uncomment these lines
+             **/
+            // Compute control to apply
+            pid_steer.UpdateError(error_steer);
+            steer_output = pid_steer.TotalError();// Lấy giá trị đầu ra điều khiển góc lái từ PID
+            std::cout<< "steer_output = " << steer_output <<endl;
+
+
+            // Save data
+            file_steer.seekg(std::ios::beg);
+            for(int j=0; j < i - 1; ++j) {
+                file_steer.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            }
+            file_steer  << i ;
+            file_steer  << " " << error_steer;
+            file_steer  << " " << steer_output << endl;
+
+            ////////////////////////////////////////
+            // Throttle control
+            ////////////////////////////////////////
+
+            /**
+             * TODO (step 2): uncomment these lines
+             **/
+            // Update the delta time with the previous command
+            pid_throttle.UpdateDeltaTime(new_delta_time);  // Cập nhật delta time cho bộ điều khiển tốc độ
             
-          // Compute steer error
-          double error_steer;
-          
+            double error_throttle = 0;
+            double target_x = x_points.back();
+            double target_y = y_points.back();
+            double target_v = v_points.back();
+            double current_x = x_position;
+            double current_y = y_position;
+            double current_v = velocity;
+
+            double distance_to_target = utils::distance(current_x, current_y, target_x, target_y);
+            std::cout<<"distance_to_target = "<< distance_to_target<<endl;
+
+            // Kiểm tra nếu khoảng cách gần như bằng 0 để tránh chia cho 0
+            if (std::abs(distance_to_target) < DBL_EPSILON) {
+                error_throttle = 0.0;
+            } else {
+                // Tính gia tốc cần thiết để đạt tốc độ mục tiêu
+                double acceleration = (std::pow(target_v, 2) - std::pow(current_v, 2)) / (2 * distance_to_target);
+
+                // Tính toán sai số throttle dựa trên gia tốc cần thiết
+                error_throttle = -1 * acceleration;
+            }
+            /* Refer*/
+            // double error_throttle = utils::get_throttle_error(x_position, y_position, velocity, x_points.back(), y_points.back(), v_points.back());
+            /* end Refer*/
+            std::cout<<"error_throttle = "<< error_throttle<<endl;
+            // Giới hạn giá trị của error_throttle để tránh hiện tượng "quá điều chỉnh"
+            error_throttle = utils::clampD(error_throttle, -1.0, 1.0);
+            std::cout<<"error_throttle check limit = "<< error_throttle<<endl;
+            pid_throttle.UpdateError(error_throttle);  // Cập nhật lỗi của bộ điều khiển PID cho tốc độ
+            double throttle = pid_throttle.TotalError();  // Lấy giá trị đầu ra điều khiển tốc độ từ PID
+            std::cout<<"after check error throttle =  "<< throttle<<endl;
+        
+            double throttle_output;
+            double brake_output;
+
+            // Adapt the negative throttle to break
+            if (throttle > 0.0) {
+                throttle_output = throttle;
+                brake_output = 0;
+            } else {
+                throttle_output = 0;
+                brake_output = -throttle;
+            }
+
+            // Save data
+            file_throttle.seekg(std::ios::beg);
+            for(int j=0; j < i - 1; ++j){
+                file_throttle.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+            }
+            file_throttle  << i ;
+            file_throttle  << " " << error_throttle;
+            file_throttle  << " " << brake_output;
+            file_throttle  << " " << throttle_output << endl;
 
 
+            // Send control
+            json msgJson;
+            msgJson["brake"] = brake_output;
+            msgJson["throttle"] = throttle_output;
+            msgJson["steer"] = steer_output;
 
-          double steer_output;
+            msgJson["trajectory_x"] = x_points;
+            msgJson["trajectory_y"] = y_points;
+            msgJson["trajectory_v"] = v_points;
+            msgJson["spirals_x"] = spirals_x;
+            msgJson["spirals_y"] = spirals_y;
+            msgJson["spirals_v"] = spirals_v;
+            msgJson["spiral_idx"] = best_spirals;
+            msgJson["active_maneuver"] = behavior_planner.get_active_maneuver();
 
-          /**
-          * TODO (step 3): compute the steer error (error_steer) from the position and the desired trajectory
-          **/
-//           error_steer = 0;
-          // Tính toán lỗi góc lái dựa trên góc giữa điểm hiện tại và điểm mục tiêu cuối cùng trên quỹ đạo
-          error_steer = angle_between_points(x_position, y_position, x_points.back(), y_points.back()) - yaw;
+            //  min point threshold before doing the update
+            // for high update rate use 19 for slow update rate use 4
+            msgJson["update_point_thresh"] = 16;
 
-          /**
-          * TODO (step 3): uncomment these lines
-          **/
-//           // Compute control to apply
-          pid_steer.UpdateError(error_steer);
-          steer_output = pid_steer.TotalError();// Lấy giá trị đầu ra điều khiển góc lái từ PID
+            auto msg = msgJson.dump();
 
+            i = i + 1;
+            file_steer.close();
+            file_throttle.close();
 
-//           // Save data
-          file_steer.seekg(std::ios::beg);
-          for(int j=0; j < i - 1; ++j) {
-              file_steer.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-          }
-          file_steer  << i ;
-          file_steer  << " " << error_steer;
-          file_steer  << " " << steer_output << endl;
+            ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
 
-          ////////////////////////////////////////
-          // Throttle control
-          ////////////////////////////////////////
-
-          /**
-          * TODO (step 2): uncomment these lines
-          **/
-//           // Update the delta time with the previous command
-//           pid_throttle.UpdateDeltaTime(new_delta_time);
-          pid_throttle.UpdateDeltaTime(new_delta_time);  // Cập nhật delta time cho bộ điều khiển tốc độ
-            
-
-          // Compute error of speed
-          
-          
-          /**
-          * TODO (step 2): compute the throttle error (error_throttle) from the position and the desired speed
-          **/
-          // modify the following line for step 2
-          double error_throttle = 0;
-          double target_x = x_points.back();
-          double target_y = y_points.back();
-          double target_v = v_points.back();
-          double current_x = x_position;
-          double current_y = y_position;
-          double current_v = velocity;
-
-          double distance_to_target = utils::distance(current_x, current_y, target_x, target_y);
-
-          // Kiểm tra nếu khoảng cách gần như bằng 0 để tránh chia cho 0
-          if (std::abs(distance_to_target) < DBL_EPSILON) {
-              error_throttle = 0.0;
-          } else {
-              // Tính gia tốc cần thiết để đạt tốc độ mục tiêu
-              double acceleration = (std::pow(target_v, 2) - std::pow(current_v, 2)) / (2 * distance_to_target);
-
-              // Tính toán sai số throttle dựa trên gia tốc cần thiết
-              error_throttle = -1 * acceleration;
-          }
-
-          // Giới hạn giá trị của error_throttle để tránh hiện tượng "quá điều chỉnh"
-          error_throttle = utils::clampD(error_throttle, -1.0, 1.0);
-
-          /**
-          * TODO (step 2): uncomment these lines
-          **/
-//           // Compute control to apply
-//           pid_throttle.UpdateError(error_throttle);
-//           double throttle = pid_throttle.TotalError();
-          pid_throttle.UpdateError(error_throttle);  // Cập nhật lỗi của bộ điều khiển PID cho tốc độ
-          double throttle = pid_throttle.TotalError();  // Lấy giá trị đầu ra điều khiển tốc độ từ PID
-            
-          double throttle_output;
-          double brake_output;
-
-//           // Adapt the negative throttle to break
-          if (throttle > 0.0) {
-            throttle_output = throttle;
-            brake_output = 0;
-          } else {
-            throttle_output = 0;
-            brake_output = -throttle;
-          }
-
-//           // Save data
-          file_throttle.seekg(std::ios::beg);
-          for(int j=0; j < i - 1; ++j){
-              file_throttle.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
-          }
-          file_throttle  << i ;
-          file_throttle  << " " << error_throttle;
-          file_throttle  << " " << brake_output;
-          file_throttle  << " " << throttle_output << endl;
-
-
-          // Send control
-          json msgJson;
-          msgJson["brake"] = brake_output;
-          msgJson["throttle"] = throttle_output;
-          msgJson["steer"] = steer_output;
-
-          msgJson["trajectory_x"] = x_points;
-          msgJson["trajectory_y"] = y_points;
-          msgJson["trajectory_v"] = v_points;
-          msgJson["spirals_x"] = spirals_x;
-          msgJson["spirals_y"] = spirals_y;
-          msgJson["spirals_v"] = spirals_v;
-          msgJson["spiral_idx"] = best_spirals;
-          msgJson["active_maneuver"] = behavior_planner.get_active_maneuver();
-
-          //  min point threshold before doing the update
-          // for high update rate use 19 for slow update rate use 4
-          msgJson["update_point_thresh"] = 16;
-
-          auto msg = msgJson.dump();
-
-          i = i + 1;
-          file_steer.close();
-          file_throttle.close();
-
-      ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-
-    }
-
-  });
-
-
-  h.onConnection([](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req)
-  {
-      cout << "Connected!!!" << endl;
+        }
     });
 
 
-  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length)
+    h.onConnection([](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req)
     {
-      ws.close();
-      cout << "Disconnected" << endl;
+        cout << "Connected!!!" << endl;
     });
 
-  int port = 4567;
-  if (h.listen("0.0.0.0", port))
-    {
-      cout << "Listening to port " << port << endl;
-      h.run();
-    }
-  else
-    {
-      cerr << "Failed to listen to port" << endl;
-      return -1;
-    }
 
+    h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length)
+    {
+    ws.close();
+    cout << "Disconnected" << endl;
+    });
 
+    int port = 4567;
+    if (h.listen("0.0.0.0", port))
+    {
+    cout << "Listening to port " << port << endl;
+    h.run();
+    }
+    else
+    {
+    cerr << "Failed to listen to port" << endl;
+    return -1;
+    }
 }

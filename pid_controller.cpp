@@ -36,6 +36,7 @@ void PID::UpdateError(double cte) {
    * TODO: Update PID errors based on cte.
    **/
     if (this->cte == 0.0 && this->sum_cte == 0.0) {
+        std::cout<<"UpdateError first time"<<endl;
         this->cte = cte;
     }
 
@@ -47,7 +48,7 @@ void PID::UpdateError(double cte) {
 
     this->sum_cte += cte * this->delta_t;
     this->cte = cte;
-
+    std::cout<<"UpdateError diff_cte = "<< this->diff_cte << ", sum_cte = "<< this->sum_cte << ", cte = "<< this->cte <<endl;
 }
 
 double PID::TotalError() {
@@ -57,6 +58,7 @@ double PID::TotalError() {
    */
    // TODO: Tính toán giá trị điều khiển PID và giới hạn trong phạm vi đầu ra
     double control = - (this->k_p * this->cte) - (this->k_d * this->diff_cte) + (this->k_i * this->sum_cte);
+    std::cout<<"TotalError control = "<< control<<endl;
 
     // Kiểm tra và giới hạn giá trị điều khiển trong khoảng lim_min_output và lim_max_output
     if (control > this->lim_max_output) {
