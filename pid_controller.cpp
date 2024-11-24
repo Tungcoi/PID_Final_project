@@ -22,32 +22,36 @@ void PID::Init(double Kpi, double Kii, double Kdi, double output_lim_maxi, doubl
    this->k_p = Kpi;
    this->k_i = Kii;
    this->k_d = Kdi;
-   this->lim_max_output = lim_max_output;
-   this->lim_min_output = lim_min_output;
+   this->lim_max_output = output_lim_maxi;
+   this->lim_min_output = output_lim_mini;
    this->cte = 0.0;
    this->diff_cte = 0.0;
    this->sum_cte = 0.0;
    this->delta_t = 0.0;
+   std::cout<<"k_p = "<< k_p << ",k_i = " << k_i<< ",k_d = " << k_d<<endl;
+   std::cout<<"lim_max_output = "<< lim_max_output << ",lim_min_output = " << lim_min_output<<endl;
+   std::cout<<"cte = "<< cte << ",diff_cte = " << diff_cte<< ",sum_cte = " << sum_cte<< ",delta_t = " << delta_t<<endl;
+
 }
 
 
-void PID::UpdateError(double cte) {
+void PID::UpdateError(double update_cte) {
    /**
    * TODO: Update PID errors based on cte.
    **/
     if (this->cte == 0.0 && this->sum_cte == 0.0) {
         std::cout<<"UpdateError first time"<<endl;
-        this->cte = cte;
+        this->cte = update_cte;
     }
 
     if (std::abs(this->delta_t) > 0.0001) {
-        this->diff_cte = (cte - this->cte) / this->delta_t;
+        this->diff_cte = (update_cte - this->cte) / this->delta_t;
     } else {
         this->diff_cte = 0.0;
     }
 
     this->sum_cte += cte * this->delta_t;
-    this->cte = cte;
+    this->cte = update_cte;
     std::cout<<"UpdateError diff_cte = "<< this->diff_cte << ", sum_cte = "<< this->sum_cte << ", cte = "<< this->cte <<endl;
 }
 

@@ -399,7 +399,7 @@ int main(int argc, char* argv[])
                 double acceleration = (std::pow(target_v, 2) - std::pow(current_v, 2)) / (2 * distance_to_target);
 
                 // Tính toán sai số throttle dựa trên gia tốc cần thiết
-                error_throttle = -1 * acceleration;
+                error_throttle = acceleration;
             }
             /* Refer*/
             // double error_throttle = utils::get_throttle_error(x_position, y_position, velocity, x_points.back(), y_points.back(), v_points.back());
