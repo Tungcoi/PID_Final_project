@@ -201,37 +201,32 @@ std::string throttle_file_name;
 int main(int argc, char* argv[]) 
 {
     
-    // Mảng lưu trữ các bộ tham số cho PID Controller
+    // Vector for default PID parameters
     std::vector<std::vector<double>> pid_steer_params = {
-        {0.3, 0.01, 0.4},  // Mặc định
-        {0.15, 0.005, 0.05}, // Option 1: An toàn và mượt mà
-        {0.3, 0.05, 0.3},  // Option 2: Phản ứng nhanh
-        {0.25, 0.01, 0.25}, // Option 3: Ổn định cho thời gian chạy lâu
-        {0.25, 0.1, 0.5}   // Option 4: Tối ưu hóa cao
+        {0.3, 0.01, 0.4}  // Default
+    };
+    std::vector<std::vector<double>> pid_throttle_params = {
+        {0.7, 0.10, 0.2}  // Default
     };
 
-    std::vector<std::vector<double>> pid_throttle_params = {
-        {0.35, 0.01, 0.2},  // Mặc định
-        {0.25, 0.02, 0.1},  // Option 1: An toàn và mượt mà
-        {0.35, 0.01, 0.2},  // Option 2: Phản ứng nhanh
-        {0.2, 0.05, 0.1},   // Option 3: Ổn định cho thời gian chạy lâu
-        {0.3, 0.02, 0.2}    // Option 4: Tối ưu hóa cao
-    };
-    int option = 0;
-    if (argc > 1) {
-        option = std::stoi(argv[1]);
-        // Đảm bảo chỉ số hợp lệ
-        if (option < 0 || option >= pid_steer_params.size()) {
-            std::cerr << "Invalid option! Using default parameters." << std::endl;
-            option = 0;
-        }
+    // Override default if arguments are provided
+    if (argc > 6) {
+        pid_steer_params[0][0] = std::stod(argv[1]);  // Kp (steer)
+        pid_steer_params[0][1] = std::stod(argv[2]);  // Ki (steer)
+        pid_steer_params[0][2] = std::stod(argv[3]);  // Kd (steer)
+        pid_throttle_params[0][0] = std::stod(argv[4]);  // Kp (throttle)
+        pid_throttle_params[0][1] = std::stod(argv[5]);  // Ki (throttle)
+        pid_throttle_params[0][2] = std::stod(argv[6]);  // Kd (throttle)
+        cout << "Using custom PID parameters." << endl;
+    } else {
+        cout << "Using default PID parameters." << endl;
     }
-    cout << "param option = " << option << endl;
+    
     // Lấy bộ tham số PID cho `steer` và `throttle` từ mảng
-    auto steer_params = pid_steer_params[option];
-    auto throttle_params = pid_throttle_params[option];
-    steer_file_name = "steer_pid_data_option_" + std::to_string(option) + ".txt";
-    throttle_file_name = "throttle_pid_data_option_" + std::to_string(option) + ".txt";
+    auto steer_params = pid_steer_params[0];
+    auto throttle_params = pid_throttle_params[0];
+    steer_file_name = "steer_pid_data.txt";
+    throttle_file_name = "throttle_pid_data.txt";
 
     cout << "starting server" << endl;
     uWS::Hub h;
@@ -267,7 +262,7 @@ int main(int argc, char* argv[])
      **/
     double max_throttle = 1.0;
     double max_brake = -1.0;
-    PID pid_throttle = PID();
+    PID pid_throttle = PID(true);
     double throttle_kp = throttle_params[0];
     double throttle_ki = throttle_params[1];
     double throttle_kd = throttle_params[2];
@@ -335,8 +330,10 @@ int main(int argc, char* argv[])
             double current_y = y_position;
             double current_v = velocity;
 
+            std::cout<<"\n\n     ========================================     \n"; 
             std::cout<<"target_x = " <<target_x <<", target_y = " << target_y <<", target_v = " << target_v<<endl;
             std::cout<<"current_x = " <<current_x <<", current_y = " << current_y <<", current_v = " << current_v<<endl;
+            std::cout<<"new_delta_time = " << new_delta_time <<endl;
 
             ////////////////////////////////////////
             // Steering control
@@ -357,7 +354,7 @@ int main(int argc, char* argv[])
              **/
             // Tính toán lỗi góc lái dựa trên góc giữa điểm hiện tại và điểm mục tiêu cuối cùng trên quỹ đạo
             error_steer = angle_between_points(current_x, current_y, target_x, target_y) - yaw;
-            std::cout<< "error_steer = " << error_steer <<endl;
+            //std::cout<< "error_steer = " << error_steer <<endl;
 
             /**
              * TODO (step 3): uncomment these lines
@@ -365,7 +362,7 @@ int main(int argc, char* argv[])
             // Compute control to apply
             pid_steer.UpdateError(error_steer);
             steer_output = pid_steer.TotalError();// Lấy giá trị đầu ra điều khiển góc lái từ PID
-            std::cout<< "steer_output = " << steer_output <<endl;
+            //std::cout<< "steer_output = " << steer_output <<endl;
 
 
             // Save data
@@ -396,18 +393,11 @@ int main(int argc, char* argv[])
                 error_throttle = 0.0;
             } else {
                 // Tính gia tốc cần thiết để đạt tốc độ mục tiêu
-                double acceleration = (std::pow(target_v, 2) - std::pow(current_v, 2)) / (2 * distance_to_target);
-
-                // Tính toán sai số throttle dựa trên gia tốc cần thiết
-                error_throttle = acceleration;
+                error_throttle = (std::pow(target_v, 2) - std::pow(current_v, 2)) / (2 * distance_to_target);
             }
-            /* Refer*/
-            // double error_throttle = utils::get_throttle_error(x_position, y_position, velocity, x_points.back(), y_points.back(), v_points.back());
-            /* end Refer*/
             std::cout<<"error_throttle = "<< error_throttle<<endl;
             // Giới hạn giá trị của error_throttle để tránh hiện tượng "quá điều chỉnh"
             error_throttle = utils::clampD(error_throttle, -1.0, 1.0);
-            std::cout<<"error_throttle check limit = "<< error_throttle<<endl;
             pid_throttle.UpdateError(error_throttle);  // Cập nhật lỗi của bộ điều khiển PID cho tốc độ
             double throttle = pid_throttle.TotalError();  // Lấy giá trị đầu ra điều khiển tốc độ từ PID
             std::cout<<"after check error throttle =  "<< throttle<<endl;

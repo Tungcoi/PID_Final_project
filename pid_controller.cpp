@@ -11,7 +11,7 @@
 
 using namespace std;
 
-PID::PID() {}
+// PID::PID() {}
 
 PID::~PID() {}
 
@@ -28,9 +28,14 @@ void PID::Init(double Kpi, double Kii, double Kdi, double output_lim_maxi, doubl
    this->diff_cte = 0.0;
    this->sum_cte = 0.0;
    this->delta_t = 0.0;
-   std::cout<<"k_p = "<< k_p << ",k_i = " << k_i<< ",k_d = " << k_d<<endl;
-   std::cout<<"lim_max_output = "<< lim_max_output << ",lim_min_output = " << lim_min_output<<endl;
-   std::cout<<"cte = "<< cte << ",diff_cte = " << diff_cte<< ",sum_cte = " << sum_cte<< ",delta_t = " << delta_t<<endl;
+   if (is_log) 
+   {    
+        std::cout<<"k_p = "<< k_p << ",k_i = " << k_i<< ",k_d = " << k_d<<endl;
+        std::cout<<"lim_max_output = "<< lim_max_output << ",lim_min_output = " << lim_min_output<<endl;
+        std::cout<<"cte = "<< cte << ",diff_cte = " << diff_cte<< ",sum_cte = " << sum_cte<< ",delta_t = " << delta_t<<endl;
+
+   }
+   
 
 }
 
@@ -40,7 +45,7 @@ void PID::UpdateError(double update_cte) {
    * TODO: Update PID errors based on cte.
    **/
     if (this->cte == 0.0 && this->sum_cte == 0.0) {
-        std::cout<<"UpdateError first time"<<endl;
+        if (is_log) std::cout<<"UpdateError first time"<<endl;
         this->cte = update_cte;
     }
 
@@ -52,7 +57,7 @@ void PID::UpdateError(double update_cte) {
 
     this->sum_cte += cte * this->delta_t;
     this->cte = update_cte;
-    std::cout<<"UpdateError diff_cte = "<< this->diff_cte << ", sum_cte = "<< this->sum_cte << ", cte = "<< this->cte <<endl;
+    if (is_log) std::cout<<"UpdateError diff_cte = "<< this->diff_cte << ", sum_cte = "<< this->sum_cte << ", cte = "<< this->cte <<endl;
 }
 
 double PID::TotalError() {
@@ -61,8 +66,8 @@ double PID::TotalError() {
     * The code should return a value in the interval [output_lim_mini, output_lim_maxi]
    */
    // TODO: Tính toán giá trị điều khiển PID và giới hạn trong phạm vi đầu ra
-    double control = - (this->k_p * this->cte) - (this->k_d * this->diff_cte) + (this->k_i * this->sum_cte);
-    std::cout<<"TotalError control = "<< control<<endl;
+    double control = (this->k_p * this->cte) + (this->k_d * this->diff_cte) + (this->k_i * this->sum_cte);
+    if (is_log) std::cout<<"TotalError control = "<< control<<endl;
 
     // Kiểm tra và giới hạn giá trị điều khiển trong khoảng lim_min_output và lim_max_output
     if (control > this->lim_max_output) {

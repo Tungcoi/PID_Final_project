@@ -39,10 +39,12 @@ public:
     */
     double delta_t;
     
+
+    bool is_log = false;
     /*
     * Constructor
     */
-    PID();
+    PID(int isLog = false): is_log(isLog) {};
 
     /*
     * Destructor.
