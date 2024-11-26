@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
      **/
     double max_throttle = 1.0;
     double max_brake = -1.0;
-    PID pid_throttle = PID(true);
+    PID pid_throttle = PID();
     double throttle_kp = throttle_params[0];
     double throttle_ki = throttle_params[1];
     double throttle_kd = throttle_params[2];
