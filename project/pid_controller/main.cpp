@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
         cout << "Using default PID parameters." << endl;
     }
     
-    // Get PID paramas for `steer` và `throttle`
+    // Lấy bộ tham số PID cho `steer` và `throttle` từ mảng
     auto steer_params = pid_steer_params[0];
     auto throttle_params = pid_throttle_params[0];
     steer_file_name = "steer_pid_data.txt";
